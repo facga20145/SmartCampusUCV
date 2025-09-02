@@ -1,10 +1,10 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put } from '@nestjs/common';
-import { CreateUsuarioUseCase } from '../../application/use-cases/create-usuario.use-case';
-import { DeleteUsuarioUseCase } from '../../application/use-cases/delete-usuario.use-case';
-import { FindAllUsuariosUseCase } from '../../application/use-cases/find-all-usuarios.use-case';
-import { FindUsuarioByEmailUseCase } from '../../application/use-cases/find-usuario-by-email.use-case';
-import { FindUsuarioByIdUseCase } from '../../application/use-cases/find-usuario-by-id.use-case';
-import { UpdateUsuarioUseCase } from '../../application/use-cases/update-usuario.use-case';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Patch } from '@nestjs/common';
+import { UsuarioCreateUseCase } from '../../application/use-cases/commands/usuario-create.use-case';
+import { UsuarioDeleteUseCase } from '../../application/use-cases/commands/usuario-delete.use-case';
+import { UsuarioFindAllUseCase } from '../../application/use-cases/queries/usuario-find-all.use-case';
+import { UsuarioFindByEmailUseCase } from '../../application/use-cases/queries/usuario-find-by-email.use-case';
+import { UsuarioFindOneUseCase } from '../../application/use-cases/queries/usuario-find-one.use-case';
+import { UsuarioUpdateUseCase } from '../../application/use-cases/commands/usuario-update.use-case';
 import { UsuarioCreateRequestDto } from '../../application/dtos/usuario-create-request.dto';
 import { UsuarioCreateResponseDto } from '../../application/dtos/usuario-create-response.dto';
 import { UsuarioUpdateRequestDto } from '../../application/dtos/usuario-update-request.dto';
@@ -13,12 +13,12 @@ import { UsuarioUpdateResponseDto } from '../../application/dtos/usuario-update-
 @Controller('usuarios')
 export class UsuarioController {
   constructor(
-    private readonly createUsuarioUseCase: CreateUsuarioUseCase,
-    private readonly updateUsuarioUseCase: UpdateUsuarioUseCase,
-    private readonly deleteUsuarioUseCase: DeleteUsuarioUseCase,
-    private readonly findAllUsuariosUseCase: FindAllUsuariosUseCase,
-    private readonly findUsuarioByIdUseCase: FindUsuarioByIdUseCase,
-    private readonly findUsuarioByEmailUseCase: FindUsuarioByEmailUseCase,
+    private readonly createUsuarioUseCase: UsuarioCreateUseCase,
+    private readonly updateUsuarioUseCase: UsuarioUpdateUseCase,
+    private readonly deleteUsuarioUseCase: UsuarioDeleteUseCase,
+    private readonly findAllUsuariosUseCase: UsuarioFindAllUseCase,
+    private readonly findUsuarioByIdUseCase: UsuarioFindOneUseCase,
+    private readonly findUsuarioByEmailUseCase: UsuarioFindByEmailUseCase,
   ) {}
 
   @Post()
@@ -41,9 +41,9 @@ export class UsuarioController {
     return this.findUsuarioByEmailUseCase.execute(email);
   }
 
-  @Put()
-  async update(@Body() dto: UsuarioUpdateRequestDto): Promise<UsuarioUpdateResponseDto> {
-    return this.updateUsuarioUseCase.execute(dto);
+  @Patch(':id')
+  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UsuarioUpdateRequestDto): Promise<UsuarioUpdateResponseDto> {
+    return this.updateUsuarioUseCase.execute({ id, ...dto } as any);
   }
 
   @Delete(':id')

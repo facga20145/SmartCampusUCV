@@ -4,13 +4,15 @@ import { PrismaClient } from '@prisma/client';
 // Controladores
 import { UsuarioController } from '../infrastructure/controllers/usuario.controller';
 
-// Casos de uso
-import { CreateUsuarioUseCase } from '../application/use-cases/create-usuario.use-case';
-import { UpdateUsuarioUseCase } from '../application/use-cases/update-usuario.use-case';
-import { DeleteUsuarioUseCase } from '../application/use-cases/delete-usuario.use-case';
-import { FindAllUsuariosUseCase } from '../application/use-cases/find-all-usuarios.use-case';
-import { FindUsuarioByIdUseCase } from '../application/use-cases/find-usuario-by-id.use-case';
-import { FindUsuarioByEmailUseCase } from '../application/use-cases/find-usuario-by-email.use-case';
+// Casos de uso - Commands
+import { UsuarioCreateUseCase } from '../application/use-cases/commands/usuario-create.use-case';
+import { UsuarioUpdateUseCase } from '../application/use-cases/commands/usuario-update.use-case';
+import { UsuarioDeleteUseCase } from '../application/use-cases/commands/usuario-delete.use-case';
+
+// Casos de uso - Queries
+import { UsuarioFindAllUseCase } from '../application/use-cases/queries/usuario-find-all.use-case';
+import { UsuarioFindOneUseCase } from '../application/use-cases/queries/usuario-find-one.use-case';
+import { UsuarioFindByEmailUseCase } from '../application/use-cases/queries/usuario-find-by-email.use-case';
 
 // Servicios de dominio
 import { UsuarioCreateService } from '../domain/services/commands/usuario-create.service';
@@ -28,13 +30,15 @@ import { UsuarioRepositoryPort } from '../infrastructure/adapters/ports/usuario-
   imports: [],
   controllers: [UsuarioController],
   providers: [
-    // Casos de uso
-    CreateUsuarioUseCase,
-    UpdateUsuarioUseCase,
-    DeleteUsuarioUseCase,
-    FindAllUsuariosUseCase,
-    FindUsuarioByIdUseCase,
-    FindUsuarioByEmailUseCase,
+    // Casos de uso - Commands
+    UsuarioCreateUseCase,
+    UsuarioUpdateUseCase,
+    UsuarioDeleteUseCase,
+
+    // Casos de uso - Queries
+    UsuarioFindAllUseCase,
+    UsuarioFindOneUseCase,
+    UsuarioFindByEmailUseCase,
     
     // Servicios de dominio
     UsuarioCreateService,

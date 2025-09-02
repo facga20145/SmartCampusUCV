@@ -6,7 +6,7 @@ import { UsuarioRepositoryPort } from '../../../infrastructure/adapters/ports/us
 export class UsuarioFindByIdService {
   constructor(private readonly usuarioRepository: UsuarioRepositoryPort) {}
 
-  async execute(id: number): Promise<UsuarioEntity> {
+  async execute(id: number): Promise<UsuarioEntity | null> {
     return this.usuarioRepository.findById(id);
   }
 }
