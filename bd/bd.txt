@@ -1,0 +1,123 @@
+-- =========================
+-- ENUMS
+-- =========================
+CREATE TYPE rol_usuario AS ENUM ('administrador','organizador','estudiante');
+CREATE TYPE estado_inscripcion AS ENUM ('pendiente','confirmada','cancelada');
+CREATE TYPE categoria_actividad AS ENUM ('deportiva','artistica','voluntariado');
+CREATE TYPE estado_notificacion AS ENUM ('pendiente','leida');
+
+-- =========================
+-- TABLAS PRINCIPALES
+-- =========================
+
+-- Usuarios del sistema
+CREATE TABLE usuario (
+    id_usuario SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(100) NOT NULL,
+    correo_institucional VARCHAR(150) UNIQUE NOT NULL,
+    contrasena VARCHAR(255) NOT NULL,
+    rol rol_usuario NOT NULL,
+    intereses TEXT,
+    hobbies TEXT,
+    foto TEXT
+);
+
+-- Actividades
+CREATE TABLE actividad (
+    id_actividad SERIAL PRIMARY KEY,
+    titulo VARCHAR(150) NOT NULL,
+    descripcion TEXT,
+    categoria categoria_actividad NOT NULL,
+    fecha DATE NOT NULL,
+    hora TIME NOT NULL,
+    lugar VARCHAR(150) NOT NULL,
+    max_participantes INT CHECK (max_participantes > 0),
+    nivel_sostenibilidad INT CHECK (nivel_sostenibilidad BETWEEN 1 AND 5),
+    organizador_id INT REFERENCES usuario(id_usuario) ON DELETE CASCADE
+);
+
+-- Inscripciones de alumnos
+CREATE TABLE inscripcion (
+    id_inscripcion SERIAL PRIMARY KEY,
+    usuario_id INT REFERENCES usuario(id_usuario) ON DELETE CASCADE,
+    actividad_id INT REFERENCES actividad(id_actividad) ON DELETE CASCADE,
+    fecha_inscripcion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    estado estado_inscripcion DEFAULT 'pendiente',
+    UNIQUE(usuario_id, actividad_id) -- evitar doble inscripción
+);
+
+-- Participación y feedback
+CREATE TABLE participacion (
+    id_participacion SERIAL PRIMARY KEY,
+    usuario_id INT REFERENCES usuario(id_usuario) ON DELETE CASCADE,
+    actividad_id INT REFERENCES actividad(id_actividad) ON DELETE CASCADE,
+    asistencia BOOLEAN DEFAULT FALSE,
+    feedback TEXT,
+    puntos INT DEFAULT 0
+);
+
+-- Reconocimientos digitales (badges/diplomas)
+CREATE TABLE reconocimiento (
+    id_reconocimiento SERIAL PRIMARY KEY,
+    usuario_id INT REFERENCES usuario(id_usuario) ON DELETE CASCADE,
+    tipo VARCHAR(50), -- badge, diploma
+    descripcion TEXT,
+    fecha DATE DEFAULT CURRENT_DATE
+);
+
+-- Encuestas posteriores
+CREATE TABLE encuesta (
+    id_encuesta SERIAL PRIMARY KEY,
+    actividad_id INT REFERENCES actividad(id_actividad) ON DELETE CASCADE,
+    pregunta TEXT NOT NULL,
+    tipo VARCHAR(50) -- opción múltiple, escala, texto libre
+);
+
+-- Respuestas de encuestas
+CREATE TABLE respuesta_encuesta (
+    id_respuesta SERIAL PRIMARY KEY,
+    encuesta_id INT REFERENCES encuesta(id_encuesta) ON DELETE CASCADE,
+    usuario_id INT REFERENCES usuario(id_usuario) ON DELETE CASCADE,
+    respuesta TEXT
+);
+
+-- Notificaciones
+CREATE TABLE notificacion (
+    id_notificacion SERIAL PRIMARY KEY,
+    usuario_id INT REFERENCES usuario(id_usuario) ON DELETE CASCADE,
+    mensaje TEXT NOT NULL,
+    fecha_envio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    estado estado_notificacion DEFAULT 'pendiente'
+);
+
+-- =========================
+-- TABLAS PARA CHATBOT E IA
+-- =========================
+
+-- Interacciones de conversación
+CREATE TABLE interaccion_chatbot (
+    id_interaccion SERIAL PRIMARY KEY,
+    usuario_id INT REFERENCES usuario(id_usuario) ON DELETE CASCADE,
+    mensaje_usuario TEXT NOT NULL,
+    respuesta_bot TEXT,
+    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Preferencias declaradas por el usuario (gustos)
+CREATE TABLE preferencia_usuario (
+    id_preferencia SERIAL PRIMARY KEY,
+    usuario_id INT REFERENCES usuario(id_usuario) ON DELETE CASCADE,
+    categoria categoria_actividad, -- deportiva, artistica, voluntariado
+    nivel_interes INT CHECK (nivel_interes BETWEEN 1 AND 5) -- escala 1-5
+);
+
+
+CREATE TABLE recomendacion_ia (
+    id_recomendacion SERIAL PRIMARY KEY,
+    usuario_id INT REFERENCES usuario(id_usuario) ON DELETE CASCADE,
+    actividad_id INT REFERENCES actividad(id_actividad),
+    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    tipo VARCHAR(50), 
+    aceptada BOOLEAN DEFAULT FALSE 
+)
