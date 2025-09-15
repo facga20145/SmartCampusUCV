@@ -1,1 +1,4 @@
-export interface IInscripcionCreate {}
+export interface IInscripcionCreate {
+  usuarioId: number;
+  actividadId: number;
+}

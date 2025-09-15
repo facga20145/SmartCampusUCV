@@ -3,9 +3,10 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsuarioModule } from './modules/usuario/infrastructure/config/usuario.module';
 import { ActividadModule } from './modules/actividad/infrastructure/config/actividad.module';
+import { InscripcionModule } from './modules/inscripcion/infrastructure/config/inscripcion.module';
 
 @Module({
-  imports: [ActividadModule, UsuarioModule],
+  imports: [InscripcionModule, ActividadModule, UsuarioModule],
   controllers: [AppController],
   providers: [AppService],
 })
