@@ -1,0 +1,206 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum RolUsuario {
+  administrador
+  organizador
+  estudiante
+}
+
+enum EstadoInscripcion {
+  pendiente
+  confirmada
+  cancelada
+}
+
+enum CategoriaActividad {
+  deportiva
+  artistica
+  voluntariado
+  canto
+}
+
+enum EstadoNotificacion {
+  pendiente
+  leida
+}
+
+// Modelos
+model Usuario {
+  id                Int                  @id @default(autoincrement()) @map("id_usuario")
+  nombre            String               @db.VarChar(100)
+  apellido          String               @db.VarChar(100)
+  correoInstitucional String              @unique @map("correo_institucional") @db.VarChar(150)
+  contrasena        String               @db.VarChar(255)
+  rol               RolUsuario
+  intereses         String?
+  hobbies           String?
+  foto              String?
+  
+  // Relaciones
+  actividades       Actividad[]          @relation("OrganizadorActividad")
+  inscripciones     Inscripcion[]
+  participaciones   Participacion[]
+  reconocimientos   Reconocimiento[]
+  respuestasEncuesta RespuestaEncuesta[]
+  notificaciones    Notificacion[]
+  interaccionesChatbot InteraccionChatbot[]
+  preferencias      PreferenciaUsuario[]
+  recomendaciones   RecomendacionIA[]
+  
+  @@map("usuario")
+}
+
+model Actividad {
+  id                Int                  @id @default(autoincrement()) @map("id_actividad")
+  titulo            String               @db.VarChar(150)
+  descripcion       String?
+  categoria         CategoriaActividad
+  fecha             DateTime             @db.Date
+  hora              DateTime             @db.Time()
+  lugar             String               @db.VarChar(150)
+  maxParticipantes  Int?                 @map("max_participantes")
+  nivelSostenibilidad Int?               @map("nivel_sostenibilidad")
+  organizadorId     Int                  @map("organizador_id")
+  
+  // Relaciones
+  organizador       Usuario              @relation("OrganizadorActividad", fields: [organizadorId], references: [id], onDelete: Cascade)
+  inscripciones     Inscripcion[]
+  participaciones   Participacion[]
+  encuestas         Encuesta[]
+  recomendaciones   RecomendacionIA[]
+  
+  @@map("actividad")
+}
+
+model Inscripcion {
+  id                Int                  @id @default(autoincrement()) @map("id_inscripcion")
+  usuarioId         Int                  @map("usuario_id")
+  actividadId       Int                  @map("actividad_id")
+  fechaInscripcion  DateTime             @default(now()) @map("fecha_inscripcion")
+  estado            EstadoInscripcion    @default(pendiente)
+  
+  // Relaciones
+  usuario           Usuario              @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  actividad         Actividad            @relation(fields: [actividadId], references: [id], onDelete: Cascade)
+  
+  @@unique([usuarioId, actividadId])
+  @@map("inscripcion")
+}
+
+model Participacion {
+  id                Int                  @id @default(autoincrement()) @map("id_participacion")
+  usuarioId         Int                  @map("usuario_id")
+  actividadId       Int                  @map("actividad_id")
+  asistencia        Boolean              @default(false)
+  feedback          String?
+  puntos            Int                  @default(0)
+  
+  // Relaciones
+  usuario           Usuario              @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  actividad         Actividad            @relation(fields: [actividadId], references: [id], onDelete: Cascade)
+  
+  @@map("participacion")
+}
+
+model Reconocimiento {
+  id                Int                  @id @default(autoincrement()) @map("id_reconocimiento")
+  usuarioId         Int                  @map("usuario_id")
+  tipo              String?              @db.VarChar(50)
+  descripcion       String?
+  fecha             DateTime             @default(now()) @db.Date
+  
+  // Relaciones
+  usuario           Usuario              @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  
+  @@map("reconocimiento")
+}
+
+model Encuesta {
+  id                Int                  @id @default(autoincrement()) @map("id_encuesta")
+  actividadId       Int                  @map("actividad_id")
+  pregunta          String
+  tipo              String?              @db.VarChar(50)
+  
+  // Relaciones
+  actividad         Actividad            @relation(fields: [actividadId], references: [id], onDelete: Cascade)
+  respuestas        RespuestaEncuesta[]
+  
+  @@map("encuesta")
+}
+
+model RespuestaEncuesta {
+  id                Int                  @id @default(autoincrement()) @map("id_respuesta")
+  encuestaId        Int                  @map("encuesta_id")
+  usuarioId         Int                  @map("usuario_id")
+  respuesta         String?
+  
+  // Relaciones
+  encuesta          Encuesta             @relation(fields: [encuestaId], references: [id], onDelete: Cascade)
+  usuario           Usuario              @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  
+  @@map("respuesta_encuesta")
+}
+
+model Notificacion {
+  id                Int                  @id @default(autoincrement()) @map("id_notificacion")
+  usuarioId         Int                  @map("usuario_id")
+  mensaje           String
+  fechaEnvio        DateTime             @default(now()) @map("fecha_envio")
+  estado            EstadoNotificacion   @default(pendiente)
+  
+  // Relaciones
+  usuario           Usuario              @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  
+  @@map("notificacion")
+}
+
+model InteraccionChatbot {
+  id                Int                  @id @default(autoincrement()) @map("id_interaccion")
+  usuarioId         Int                  @map("usuario_id")
+  mensajeUsuario    String               @map("mensaje_usuario")
+  respuestaBot      String?              @map("respuesta_bot")
+  fecha             DateTime             @default(now())
+  
+  // Relaciones
+  usuario           Usuario              @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  
+  @@map("interaccion_chatbot")
+}
+
+model PreferenciaUsuario {
+  id                Int                  @id @default(autoincrement()) @map("id_preferencia")
+  usuarioId         Int                  @map("usuario_id")
+  categoria         CategoriaActividad?
+  nivelInteres      Int?                 @map("nivel_interes")
+  
+  // Relaciones
+  usuario           Usuario              @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  
+  @@map("preferencia_usuario")
+}
+
+model RecomendacionIA {
+  id                Int                  @id @default(autoincrement()) @map("id_recomendacion")
+  usuarioId         Int                  @map("usuario_id")
+  actividadId       Int?                 @map("actividad_id")
+  fecha             DateTime             @default(now())
+  tipo              String?              @db.VarChar(50)
+  aceptada          Boolean              @default(false)
+  
+  // Relaciones
+  usuario           Usuario              @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  actividad         Actividad?           @relation(fields: [actividadId], references: [id], onDelete: Cascade)
+  
+  @@map("recomendacion_ia")
+}
