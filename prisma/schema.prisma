@@ -27,6 +27,7 @@ enum CategoriaActividad {
   deportiva
   artistica
   voluntariado
+  canto
 }
 
 enum EstadoNotificacion {
