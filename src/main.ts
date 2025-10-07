@@ -4,6 +4,7 @@ import { LoggerUtil } from './utils/logger.util';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.enableCors();
   
   // Habilitar logs de requests HTTP
   app.use((req, res, next) => {
