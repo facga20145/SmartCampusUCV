@@ -183,3 +183,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+
+uvicorn ia_recomendador:app --reload
+python chatbot_terminal.py
