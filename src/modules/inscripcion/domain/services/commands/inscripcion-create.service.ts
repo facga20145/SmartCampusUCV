@@ -14,6 +14,14 @@ export class InscripcionCreateService {
   ) {}
 
   async execute(data: IInscripcionCreate): Promise<InscripcionEntity> {
+    // Validación: solo una inscripción activa por usuario (pendiente o confirmada)
+    const inscritoEnOtraActividad = await this.prisma.inscripcion.count({
+      where: { usuarioId: data.usuarioId, estado: { in: ['pendiente', 'confirmada'] } },
+    });
+    if (inscritoEnOtraActividad > 0) {
+      throw new BadRequestException('El usuario ya tiene una inscripción activa');
+    }
+
     const existente = await this.prisma.inscripcion.findUnique({
       where: { usuarioId_actividadId: { usuarioId: data.usuarioId, actividadId: data.actividadId } },
     });

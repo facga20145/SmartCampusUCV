@@ -121,3 +121,10 @@ CREATE TABLE recomendacion_ia (
     tipo VARCHAR(50), 
     aceptada BOOLEAN DEFAULT FALSE 
 )
+
+
+
+usar 
+pnpm prisma migrate reset
+
+pnpm prisma migrate dev --name init
