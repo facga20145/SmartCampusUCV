@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { HttpModule } from '@nestjs/axios';
 
 // Controlador
 import { Recomendacion_iaController } from '../controllers/recomendacion_ia.controller';
@@ -23,7 +24,7 @@ import { Recomendacion_iaRepositoryImpl } from '../adapters/implements/recomenda
 import { RecomendacionIaRepositoryPort } from '../adapters/ports/recomendacion_ia-repository.port';
 
 @Module({
-  imports: [],
+  imports: [HttpModule],
   controllers: [Recomendacion_iaController],
   providers: [
     // Casos de uso - Commands
