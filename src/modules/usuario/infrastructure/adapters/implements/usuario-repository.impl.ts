@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, ConflictException } from '@nestjs/common';
 import { UsuarioRepositoryPort } from '../ports/usuario-repository.port';
 import { IUsuarioCreate } from '../../../domain/interfaces/usuario-create.interface';
 import { IUsuarioUpdate } from '../../../domain/interfaces/usuario-update.interface';
@@ -27,10 +27,17 @@ export class UsuarioRepositoryImpl implements UsuarioRepositoryPort {
   }
 
   async create(data: IUsuarioCreate): Promise<UsuarioEntity> {
-    const hashedPassword = await HashUtil.hashPassword(data.contrasena);
-    const userData = { ...data, contrasena: hashedPassword };
-    const usuario = await this.prisma.usuario.create({ data: userData });
-    return this.toEntity(usuario);
+    try {
+      const hashedPassword = await HashUtil.hashPassword(data.contrasena);
+      const userData = { ...data, contrasena: hashedPassword };
+      const usuario = await this.prisma.usuario.create({ data: userData });
+      return this.toEntity(usuario);
+    } catch (err: any) {
+      if (err?.code === 'P2002') {
+        throw new ConflictException('El correo institucional ya está registrado');
+      }
+      throw err;
+    }
   }
 
   async findAll(): Promise<UsuarioEntity[]> {
