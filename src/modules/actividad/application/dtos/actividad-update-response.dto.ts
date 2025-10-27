@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ActividadEntity } from '../../domain/entities/actividad.entity';
-import { CategoriaActividad } from '@prisma/client';
 
 export class ActividadUpdateResponseDto {
   @ApiProperty()
@@ -9,8 +8,8 @@ export class ActividadUpdateResponseDto {
   titulo: string;
   @ApiProperty({ required: false })
   descripcion?: string | null;
-  @ApiProperty({ enum: CategoriaActividad })
-  categoria: CategoriaActividad;
+  @ApiProperty({ description: 'Categoría de la actividad' })
+  categoria: string;
   @ApiProperty()
   fecha: string;
   @ApiProperty()

@@ -28,16 +28,11 @@ export class ActividadRepositoryImpl implements ActividadRepositoryPort {
   }
 
   async create(data: IActividadCreate): Promise<ActividadEntity> {
-    // Mapear categoría personalizada al enum o usar un valor por defecto
-    const categoriaEnum = ['deportiva', 'artistica', 'voluntariado', 'canto', 'ambiental', 'tecnologica', 'cultural', 'academica', 'social'].includes(data.categoria)
-      ? data.categoria
-      : 'voluntariado'; // fallback
-
     const creada = await this.prisma.actividad.create({
       data: {
         titulo: data.titulo,
         descripcion: data.descripcion ?? null,
-        categoria: categoriaEnum as any,
+        categoria: data.categoria, // Ahora acepta cualquier categoría
         fecha: data.fecha,
         hora: data.hora,
         lugar: data.lugar,
@@ -72,18 +67,20 @@ export class ActividadRepositoryImpl implements ActividadRepositoryPort {
   }
 
   async update(data: IActividadUpdate): Promise<ActividadEntity> {
+    const updateData: any = {};
+    
+    if (data.titulo !== undefined) updateData.titulo = data.titulo;
+    if (data.descripcion !== undefined) updateData.descripcion = data.descripcion;
+    if (data.categoria !== undefined) updateData.categoria = data.categoria; // Acepta cualquier categoría
+    if (data.fecha !== undefined) updateData.fecha = data.fecha;
+    if (data.hora !== undefined) updateData.hora = data.hora;
+    if (data.lugar !== undefined) updateData.lugar = data.lugar;
+    if (data.maxParticipantes !== undefined) updateData.maxParticipantes = data.maxParticipantes;
+    if (data.nivelSostenibilidad !== undefined) updateData.nivelSostenibilidad = data.nivelSostenibilidad;
+
     const actualizada = await this.prisma.actividad.update({
       where: { id: data.id },
-      data: {
-        titulo: data.titulo,
-        descripcion: data.descripcion,
-        categoria: data.categoria,
-        fecha: data.fecha,
-        hora: data.hora,
-        lugar: data.lugar,
-        maxParticipantes: data.maxParticipantes,
-        nivelSostenibilidad: data.nivelSostenibilidad,
-      },
+      data: updateData,
     });
     return this.toEntity(actualizada);
   }

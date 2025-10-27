@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDateString, IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
-import { CategoriaActividad } from '@prisma/client';
+import { IsDateString, IsInt, IsOptional, IsString, Min } from 'class-validator';
 
 export class ActividadUpdateRequestDto {
   @ApiProperty()
@@ -17,10 +16,10 @@ export class ActividadUpdateRequestDto {
   @IsString()
   descripcion?: string | null;
 
-  @ApiProperty({ enum: CategoriaActividad, required: false })
+  @ApiProperty({ required: false, description: 'Categoría de la actividad' })
   @IsOptional()
-  @IsEnum(CategoriaActividad)
-  categoria?: CategoriaActividad;
+  @IsString()
+  categoria?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
