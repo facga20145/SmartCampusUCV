@@ -1,10 +1,8 @@
-import { CategoriaActividad } from '@prisma/client';
-
 export interface IActividadUpdate {
   id: number;
   titulo?: string;
   descripcion?: string | null;
-  categoria?: CategoriaActividad;
+  categoria?: string; // Permitir cualquier categoría
   fecha?: Date;
   hora?: Date;
   lugar?: string;

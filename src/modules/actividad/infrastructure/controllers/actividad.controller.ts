@@ -1,6 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Post, Patch, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { CategoriaActividad } from '@prisma/client';
 import { ActividadCreateUseCase } from '../../application/use-cases/commands/actividad-create.use-case';
 import { ActividadUpdateUseCase } from '../../application/use-cases/commands/actividad-update.use-case';
 import { ActividadDeleteUseCase } from '../../application/use-cases/commands/actividad-delete.use-case';
@@ -27,7 +26,7 @@ export class ActividadController {
 
   @Get()
   findAll(
-    @Query('categoria') categoria?: CategoriaActividad,
+    @Query('categoria') categoria?: string,
     @Query('fechaDesde') fechaDesde?: string,
     @Query('fechaHasta') fechaHasta?: string,
     @Query('lugar') lugar?: string,

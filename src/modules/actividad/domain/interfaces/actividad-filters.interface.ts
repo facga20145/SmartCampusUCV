@@ -1,7 +1,5 @@
-import { CategoriaActividad } from '@prisma/client';
-
 export interface IActividadFilters {
-  categoria?: CategoriaActividad;
+  categoria?: string; // Permitir cualquier categoría
   fechaDesde?: Date;
   fechaHasta?: Date;
   lugar?: string;

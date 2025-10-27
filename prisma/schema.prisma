@@ -23,13 +23,6 @@ enum EstadoInscripcion {
   cancelada
 }
 
-enum CategoriaActividad {
-  deportiva
-  artistica
-  voluntariado
-  canto
-}
-
 enum EstadoNotificacion {
   pendiente
   leida
@@ -65,7 +58,7 @@ model Actividad {
   id                Int                  @id @default(autoincrement()) @map("id_actividad")
   titulo            String               @db.VarChar(150)
   descripcion       String?
-  categoria         CategoriaActividad
+  categoria         String               @db.VarChar(50) // Cambiado de enum a string para permitir categorías personalizadas
   fecha             DateTime             @db.Date
   hora              DateTime             @db.Time()
   lugar             String               @db.VarChar(150)
@@ -181,7 +174,7 @@ model InteraccionChatbot {
 model PreferenciaUsuario {
   id                Int                  @id @default(autoincrement()) @map("id_preferencia")
   usuarioId         Int                  @map("usuario_id")
-  categoria         CategoriaActividad?
+  categoria         String?              @db.VarChar(50)
   nivelInteres      Int?                 @map("nivel_interes")
   
   // Relaciones
