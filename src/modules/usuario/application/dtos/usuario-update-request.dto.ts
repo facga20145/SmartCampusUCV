@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, IsInt } from 'class-validator';
+import { IsOptional, IsString, IsInt, IsEnum } from 'class-validator';
+import { RolUsuario } from '@prisma/client';
 
 export class UsuarioUpdateRequestDto {
   @ApiProperty({ required: false })
@@ -11,6 +12,11 @@ export class UsuarioUpdateRequestDto {
   @IsOptional()
   @IsString()
   apellido?: string;
+
+  @ApiProperty({ required: false, enum: ['administrador', 'organizador', 'estudiante'] })
+  @IsOptional()
+  @IsEnum(RolUsuario)
+  rol?: RolUsuario;
 
   @ApiProperty({ required: false })
   @IsOptional()

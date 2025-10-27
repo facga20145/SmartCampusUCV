@@ -58,13 +58,15 @@ export class UsuarioRepositoryImpl implements UsuarioRepositoryPort {
   }
 
   async update(data: IUsuarioUpdate): Promise<UsuarioEntity> {
-    const updateData: any = {
-      nombre: data.nombre,
-      apellido: data.apellido,
-      intereses: data.intereses,
-      hobbies: data.hobbies,
-      foto: data.foto,
-    };
+    const updateData: any = {};
+    
+    // Solo incluir campos que se están actualizando
+    if (data.nombre !== undefined) updateData.nombre = data.nombre;
+    if (data.apellido !== undefined) updateData.apellido = data.apellido;
+    if (data.rol !== undefined) updateData.rol = data.rol;
+    if (data.intereses !== undefined) updateData.intereses = data.intereses;
+    if (data.hobbies !== undefined) updateData.hobbies = data.hobbies;
+    if (data.foto !== undefined) updateData.foto = data.foto;
     
     // Solo hashear la contraseña si se proporciona
     if (data.contrasena) {
