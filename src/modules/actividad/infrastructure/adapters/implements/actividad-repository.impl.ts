@@ -28,11 +28,16 @@ export class ActividadRepositoryImpl implements ActividadRepositoryPort {
   }
 
   async create(data: IActividadCreate): Promise<ActividadEntity> {
+    // Mapear categoría personalizada al enum o usar un valor por defecto
+    const categoriaEnum = ['deportiva', 'artistica', 'voluntariado', 'canto', 'ambiental', 'tecnologica', 'cultural', 'academica', 'social'].includes(data.categoria)
+      ? data.categoria
+      : 'voluntariado'; // fallback
+
     const creada = await this.prisma.actividad.create({
       data: {
         titulo: data.titulo,
         descripcion: data.descripcion ?? null,
-        categoria: data.categoria,
+        categoria: categoriaEnum as any,
         fecha: data.fecha,
         hora: data.hora,
         lugar: data.lugar,
