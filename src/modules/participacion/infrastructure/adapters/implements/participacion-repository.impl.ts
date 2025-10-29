@@ -61,6 +61,18 @@ export class ParticipacionRepositoryImpl implements ParticipacionRepositoryPort 
     return items.map((p) => this.toEntity(p));
   }
 
+  async findByUsuario(usuarioId: number): Promise<ParticipacionEntity[]> {
+    const items = await this.prisma.participacion.findMany({ where: { usuarioId } });
+    return items.map((p) => this.toEntity(p));
+  }
+
+  async findByUsuarioAndActividad(usuarioId: number, actividadId: number): Promise<ParticipacionEntity | null> {
+    const item = await this.prisma.participacion.findFirst({
+      where: { usuarioId, actividadId },
+    });
+    return item ? this.toEntity(item) : null;
+  }
+
   async aggregateRankingGlobal(limit = 10): Promise<Array<{ usuarioId: number; puntos: number; usuario?: any }>> {
     const result = await this.prisma.participacion.groupBy({
       by: ['usuarioId'],
