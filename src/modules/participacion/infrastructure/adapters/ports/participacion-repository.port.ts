@@ -8,6 +8,6 @@ export abstract class ParticipacionRepositoryPort {
   abstract delete(id: number): Promise<void>;
   abstract findById(id: number): Promise<ParticipacionEntity | null>;
   abstract findByActividad(actividadId: number): Promise<ParticipacionEntity[]>;
-  abstract aggregateRankingByActividad(actividadId: number, limit?: number): Promise<Array<{ usuarioId: number; puntos: number }>>;
-  abstract aggregateRankingGlobal(limit?: number): Promise<Array<{ usuarioId: number; puntos: number }>>;
+  abstract aggregateRankingByActividad(actividadId: number, limit?: number): Promise<Array<{ usuarioId: number; puntos: number; usuario?: any }>>;
+  abstract aggregateRankingGlobal(limit?: number): Promise<Array<{ usuarioId: number; puntos: number; usuario?: any }>>;
 }

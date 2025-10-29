@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { JwtModule } from '@nestjs/jwt';
 import { ParticipacionController } from '../controllers/participacion.controller';
 import { ParticipacionCreateUseCase } from '../../application/use-cases/commands/participacion-create.use-case';
 import { ParticipacionUpdateUseCase } from '../../application/use-cases/commands/participacion-update.use-case';

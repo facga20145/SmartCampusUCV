@@ -61,7 +61,31 @@ export class ParticipacionRepositoryImpl implements ParticipacionRepositoryPort 
     return items.map((p) => this.toEntity(p));
   }
 
-  async aggregateRankingByActividad(actividadId: number, limit = 10): Promise<Array<{ usuarioId: number; puntos: number }>> {
+  async aggregateRankingGlobal(limit = 10): Promise<Array<{ usuarioId: number; puntos: number; usuario?: any }>> {
+    const result = await this.prisma.participacion.groupBy({
+      by: ['usuarioId'],
+      _sum: { puntos: true },
+      orderBy: { _sum: { puntos: 'desc' } },
+      take: limit,
+    });
+    
+    // Obtener información de usuarios
+    const usuarioIds = result.map(r => r.usuarioId);
+    const usuarios = await this.prisma.usuario.findMany({
+      where: { id: { in: usuarioIds } },
+      select: { id: true, nombre: true, apellido: true, correoInstitucional: true, foto: true },
+    });
+    
+    const usuarioMap = new Map(usuarios.map(u => [u.id, u]));
+    
+    return result.map((r) => ({
+      usuarioId: r.usuarioId,
+      puntos: r._sum.puntos ?? 0,
+      usuario: usuarioMap.get(r.usuarioId),
+    }));
+  }
+
+  async aggregateRankingByActividad(actividadId: number, limit = 10): Promise<Array<{ usuarioId: number; puntos: number; usuario?: any }>> {
     const result = await this.prisma.participacion.groupBy({
       by: ['usuarioId'],
       where: { actividadId },
@@ -69,16 +93,20 @@ export class ParticipacionRepositoryImpl implements ParticipacionRepositoryPort 
       orderBy: { _sum: { puntos: 'desc' } },
       take: limit,
     });
-    return result.map((r) => ({ usuarioId: r.usuarioId, puntos: r._sum.puntos ?? 0 }));
-  }
-
-  async aggregateRankingGlobal(limit = 10): Promise<Array<{ usuarioId: number; puntos: number }>> {
-    const result = await this.prisma.participacion.groupBy({
-      by: ['usuarioId'],
-      _sum: { puntos: true },
-      orderBy: { _sum: { puntos: 'desc' } },
-      take: limit,
+    
+    // Obtener información de usuarios
+    const usuarioIds = result.map(r => r.usuarioId);
+    const usuarios = await this.prisma.usuario.findMany({
+      where: { id: { in: usuarioIds } },
+      select: { id: true, nombre: true, apellido: true, correoInstitucional: true, foto: true },
     });
-    return result.map((r) => ({ usuarioId: r.usuarioId, puntos: r._sum.puntos ?? 0 }));
+    
+    const usuarioMap = new Map(usuarios.map(u => [u.id, u]));
+    
+    return result.map((r) => ({
+      usuarioId: r.usuarioId,
+      puntos: r._sum.puntos ?? 0,
+      usuario: usuarioMap.get(r.usuarioId),
+    }));
   }
 }
