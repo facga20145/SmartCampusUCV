@@ -7,7 +7,7 @@ import { InscripcionUpdateService } from '../../../domain/services/commands/insc
 export class InscripcionUpdateUseCase {
   constructor(private readonly service: InscripcionUpdateService) {}
 
-  async execute(dto: InscripcionUpdateRequestDto): Promise<InscripcionUpdateResponseDto> {
+  async execute(dto: InscripcionUpdateRequestDto & { id: number }): Promise<InscripcionUpdateResponseDto> {
     const entity = await this.service.execute({ id: dto.id, estado: dto.estado });
     return InscripcionUpdateResponseDto.fromEntity(entity);
   }
