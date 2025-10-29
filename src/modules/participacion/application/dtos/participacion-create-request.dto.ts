@@ -2,9 +2,10 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean, IsInt, IsOptional, IsString } from 'class-validator';
 
 export class ParticipacionCreateRequestDto {
-  @ApiProperty()
+  @ApiProperty({ required: false })
+  @IsOptional()
   @IsInt()
-  usuarioId: number;
+  usuarioId?: number;
 
   @ApiProperty()
   @IsInt()

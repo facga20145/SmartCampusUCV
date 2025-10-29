@@ -1,5 +1,7 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, UnauthorizedException } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { JwtService } from '@nestjs/jwt';
+import type { Request } from 'express';
 import { ParticipacionCreateUseCase } from '../../application/use-cases/commands/participacion-create.use-case';
 import { ParticipacionUpdateUseCase } from '../../application/use-cases/commands/participacion-update.use-case';
 import { ParticipacionFindAllUseCase } from '../../application/use-cases/queries/participacion-find-all.use-case';
@@ -17,12 +19,30 @@ export class ParticipacionController {
     private readonly findAllUseCase: ParticipacionFindAllUseCase,
     private readonly rankingActividadUc: ParticipacionRankingActividadUseCase,
     private readonly rankingGlobalUc: ParticipacionRankingGlobalUseCase,
+    private readonly jwtService: JwtService,
   ) {}
 
   // Asignar/crear participación (puntos iniciales)
   @Post()
-  create(@Body() dto: ParticipacionCreateRequestDto) {
-    return this.createUseCase.execute(dto as any);
+  async create(@Body() dto: ParticipacionCreateRequestDto, @Req() req: Request) {
+    // Extraer usuarioId del token JWT
+    const auth = req.headers.authorization || '';
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : undefined;
+    if (!token) {
+      throw new UnauthorizedException('Token requerido');
+    }
+    
+    try {
+      const decoded: any = await this.jwtService.verifyAsync(token);
+      const usuarioId = decoded.sub;
+      
+      return this.createUseCase.execute({
+        ...dto,
+        usuarioId,
+      });
+    } catch (error) {
+      throw new UnauthorizedException('Token inválido');
+    }
   }
 
   // Actualizar asistencia/feedback/puntos
