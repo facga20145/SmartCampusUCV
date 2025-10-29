@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { HttpModule } from '@nestjs/axios';
+import { JwtModule } from '@nestjs/jwt';
 
 // Controlador
 import { Recomendacion_iaController } from '../controllers/recomendacion_ia.controller';
@@ -23,8 +24,11 @@ import { Recomendacion_iaFindOneService } from '../../domain/services/queries/re
 import { Recomendacion_iaRepositoryImpl } from '../adapters/implements/recomendacion_ia-repository.impl';
 import { RecomendacionIaRepositoryPort } from '../adapters/ports/recomendacion_ia-repository.port';
 
+// Módulo de Inscripción (para inscripciones automáticas)
+import { InscripcionModule } from '../../../inscripcion/infrastructure/config/inscripcion.module';
+
 @Module({
-  imports: [HttpModule],
+  imports: [HttpModule, JwtModule, InscripcionModule],
   controllers: [Recomendacion_iaController],
   providers: [
     // Casos de uso - Commands

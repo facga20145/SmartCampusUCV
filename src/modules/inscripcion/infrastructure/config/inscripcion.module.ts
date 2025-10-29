@@ -39,6 +39,6 @@ import { InscripcionRepositoryImpl } from '../adapters/implements/inscripcion-re
       useFactory: () => new PrismaClient(),
     },
   ],
-  exports: [InscripcionRepositoryPort],
+  exports: [InscripcionRepositoryPort, InscripcionCreateUseCase],
 })
 export class InscripcionModule {}
