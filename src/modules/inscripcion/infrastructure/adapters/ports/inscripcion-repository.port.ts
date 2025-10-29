@@ -8,4 +8,5 @@ export abstract class InscripcionRepositoryPort {
   abstract delete(id: number): Promise<void>;
   abstract findById(id: number): Promise<InscripcionEntity | null>;
   abstract findByActividad(actividadId: number): Promise<InscripcionEntity[]>;
+  abstract findByUsuario(usuarioId: number): Promise<any[]>;
 }
