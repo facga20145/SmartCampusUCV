@@ -1,11 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsInt } from 'class-validator';
+import { IsEnum, IsInt, IsOptional } from 'class-validator';
 import { EstadoInscripcion } from '@prisma/client';
 
 export class InscripcionUpdateRequestDto {
-  @ApiProperty()
+  @ApiProperty({ required: false })
+  @IsOptional()
   @IsInt()
-  id: number;
+  id?: number;
 
   @ApiProperty({ enum: EstadoInscripcion })
   @IsEnum(EstadoInscripcion)
