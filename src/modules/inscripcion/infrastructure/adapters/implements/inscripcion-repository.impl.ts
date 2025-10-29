@@ -48,9 +48,21 @@ export class InscripcionRepositoryImpl implements InscripcionRepositoryPort {
     return i ? this.toEntity(i) : null;
   }
 
-  async findByActividad(actividadId: number): Promise<InscripcionEntity[]> {
-    const items = await this.prisma.inscripcion.findMany({ where: { actividadId } });
-    return items.map((i) => this.toEntity(i));
+  async findByActividad(actividadId: number): Promise<any[]> {
+    const items = await this.prisma.inscripcion.findMany({
+      where: { actividadId },
+      include: {
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            apellido: true,
+            correoInstitucional: true,
+          },
+        },
+      },
+    });
+    return items;
   }
 
   async findByUsuario(usuarioId: number): Promise<any[]> {
