@@ -6,16 +6,24 @@ import { HashUtil } from '../../../../utils/hash.util';
 import { AuthRepositoryPort } from '../adapters/ports/Auth-repository.port';
 import { AuthLoginResponseDto } from '../../application/dtos/Auth-create-response.dto';
 import { LoginRequestDto } from '../../application/dtos/Auth-create-request.dto';
+import { ApiTags } from '@nestjs/swagger';
+import { ApiDoc } from '../../../../common/decorators/api-doc.decorator';
 
+@ApiTags('Autenticación')
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaClient,
     private readonly authRepo: AuthRepositoryPort,
-  ) {}
+  ) { }
 
   @Post('login')
+  @ApiDoc({
+    summary: 'Iniciar sesión de usuario',
+    ok: { status: 200, description: 'Login exitoso', type: AuthLoginResponseDto },
+    unauthorized: true,
+  })
   async login(@Body() body: LoginRequestDto): Promise<AuthLoginResponseDto> {
     const usuario = await this.authRepo.findUsuarioByEmail(body.correoInstitucional);
     if (!usuario) throw new UnauthorizedException('Credenciales inválidas');
@@ -37,6 +45,11 @@ export class AuthController {
   }
 
   @Get('me')
+  @ApiDoc({
+    summary: 'Obtener información del usuario actual',
+    auth: true,
+    ok: { status: 200, description: 'Perfil de usuario recuperado' },
+  })
   async me(@Req() req: Request) {
     const auth = req.headers.authorization || '';
     const token = auth.startsWith('Bearer ') ? auth.slice(7) : undefined;

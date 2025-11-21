@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Patch, Post, Query, Req, UnauthorizedException } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiTags, ApiQuery } from '@nestjs/swagger';
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
 import { ParticipacionCreateUseCase } from '../../application/use-cases/commands/participacion-create.use-case';
@@ -10,8 +10,9 @@ import { ParticipacionCreateRequestDto } from '../../application/dtos/participac
 import { ParticipacionUpdateRequestDto } from '../../application/dtos/participacion-update-request.dto';
 import { ParticipacionRankingActividadUseCase } from '../../application/use-cases/queries/participacion-ranking-actividad.use-case';
 import { ParticipacionRankingGlobalUseCase } from '../../application/use-cases/queries/participacion-ranking-global.use-case';
+import { ApiDoc } from '../../../../common/decorators/api-doc.decorator';
 
-@ApiTags('participaciones')
+@ApiTags('Participaciones')
 @Controller('participaciones')
 export class ParticipacionController {
   constructor(
@@ -22,10 +23,15 @@ export class ParticipacionController {
     private readonly rankingActividadUc: ParticipacionRankingActividadUseCase,
     private readonly rankingGlobalUc: ParticipacionRankingGlobalUseCase,
     private readonly jwtService: JwtService,
-  ) {}
+  ) { }
 
   // Asignar/crear participación (puntos iniciales)
   @Post()
+  @ApiDoc({
+    summary: 'Registrar participación',
+    auth: true,
+    ok: { status: 201, description: 'Participación registrada' },
+  })
   async create(@Body() dto: ParticipacionCreateRequestDto, @Req() req: Request) {
     // Extraer usuarioId del token JWT
     const auth = req.headers.authorization || '';
@@ -33,11 +39,11 @@ export class ParticipacionController {
     if (!token) {
       throw new UnauthorizedException('Token requerido');
     }
-    
+
     try {
       const decoded: any = await this.jwtService.verifyAsync(token);
       const usuarioId = decoded.sub;
-      
+
       return this.createUseCase.execute({
         ...dto,
         usuarioId,
@@ -49,6 +55,11 @@ export class ParticipacionController {
 
   // Obtener mis participaciones (del usuario autenticado)
   @Get()
+  @ApiDoc({
+    summary: 'Obtener mis participaciones',
+    auth: true,
+    ok: { status: 200, description: 'Lista de participaciones' },
+  })
   async getMyParticipaciones(@Req() req: Request) {
     // Extraer usuarioId del token JWT
     const auth = req.headers.authorization || '';
@@ -56,11 +67,11 @@ export class ParticipacionController {
     if (!token) {
       throw new UnauthorizedException('Token requerido');
     }
-    
+
     try {
       const decoded: any = await this.jwtService.verifyAsync(token);
       const usuarioId = decoded.sub;
-      
+
       return this.findByUsuarioUseCase.execute(usuarioId);
     } catch (error) {
       throw new UnauthorizedException('Token inválido');
@@ -69,18 +80,33 @@ export class ParticipacionController {
 
   // Actualizar asistencia/feedback/puntos
   @Patch(':id')
+  @ApiDoc({
+    summary: 'Actualizar participación (feedback/puntos)',
+    ok: { status: 200, description: 'Participación actualizada' },
+  })
   update(@Param('id') id: string, @Body() dto: ParticipacionUpdateRequestDto) {
     return this.updateUseCase.execute({ ...dto, id: Number(id) });
   }
 
   // Ranking por actividad
   @Get('ranking')
+  @ApiQuery({ name: 'actividadId', required: true })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiDoc({
+    summary: 'Ranking por actividad',
+    ok: { status: 200, description: 'Ranking de la actividad' },
+  })
   ranking(@Query('actividadId') actividadId: string, @Query('limit') limit?: string) {
     return this.rankingActividadUc.execute(Number(actividadId), limit ? Number(limit) : undefined);
   }
 
   // Ranking global
   @Get('ranking-global')
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiDoc({
+    summary: 'Ranking global',
+    ok: { status: 200, description: 'Ranking global' },
+  })
   rankingGlobal(@Query('limit') limit?: string) {
     return this.rankingGlobalUc.execute(limit ? Number(limit) : undefined);
   }
