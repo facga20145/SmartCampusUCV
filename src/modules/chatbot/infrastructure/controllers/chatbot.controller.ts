@@ -2,16 +2,20 @@ import { Body, Controller, Post } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AI_CONFIG } from '../../../../config/ai.config';
 
+@ApiTags('Chatbot')
 @Controller('chatbot')
 export class ChatbotController {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly httpService: HttpService,
-  ) {}
+  ) { }
 
   @Post('mensaje')
+  @ApiOperation({ summary: 'Procesar mensaje del chatbot' })
+  @ApiResponse({ status: 201, description: 'Mensaje procesado exitosamente' })
   async procesarMensaje(@Body() body: { usuarioId: number; mensaje: string }) {
     const { usuarioId, mensaje } = body;
 
@@ -28,13 +32,13 @@ export class ChatbotController {
 
     // Procesar el mensaje con detección mejorada
     const mensajeLower = mensaje.toLowerCase();
-    
+
     if (mensajeLower.includes('recomend') || mensajeLower.includes('actividad') || mensajeLower.includes('suger')) {
       // El usuario está pidiendo recomendaciones
       respuestaBot = await this.procesarRecomendacion(usuarioId, mensaje);
     } else if (
-      mensajeLower.includes('inscrib') || 
-      mensajeLower.includes('quiero ir') || 
+      mensajeLower.includes('inscrib') ||
+      mensajeLower.includes('quiero ir') ||
       mensajeLower.includes('me anoto') ||
       mensajeLower.includes('apuntar')
     ) {

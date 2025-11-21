@@ -1,28 +1,32 @@
 import { Body, Controller, Get, Param, Post, Req, UnauthorizedException } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ReconocimientoCreateUseCase } from '../../application/use-cases/commands/reconocimiento-create.use-case';
 import { ReconocimientoCreateRequestDto } from '../../application/dtos/reconocimiento-create-request.dto';
 import { PrismaClient } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
 
-@ApiTags('reconocimientos')
+@ApiTags('Reconocimientos')
 @Controller('reconocimientos')
 export class ReconocimientoController {
   constructor(
     private readonly createUseCase: ReconocimientoCreateUseCase,
     private readonly prisma: PrismaClient,
     private readonly jwtService: JwtService,
-  ) {}
+  ) { }
 
   // Crear reconocimiento a un usuario (solo admin/organizador)
   @Post()
+  @ApiOperation({ summary: 'Crear reconocimiento' })
+  @ApiResponse({ status: 201, description: 'Reconocimiento creado' })
   create(@Body() dto: ReconocimientoCreateRequestDto) {
     return this.createUseCase.execute(dto);
   }
 
   // Listar todos los reconocimientos (para admin)
   @Get()
+  @ApiOperation({ summary: 'Listar todos los reconocimientos' })
+  @ApiResponse({ status: 200, description: 'Lista de reconocimientos' })
   async findAll() {
     return this.prisma.reconocimiento.findMany({
       include: {
@@ -43,17 +47,21 @@ export class ReconocimientoController {
 
   // Obtener mis reconocimientos (del usuario autenticado)
   @Get('mis-reconocimientos')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Obtener mis reconocimientos' })
+  @ApiResponse({ status: 200, description: 'Lista de reconocimientos del usuario' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
   async getMyReconocimientos(@Req() req: Request) {
     const auth = req.headers.authorization || '';
     const token = auth.startsWith('Bearer ') ? auth.slice(7) : undefined;
     if (!token) {
       throw new UnauthorizedException('Token requerido');
     }
-    
+
     try {
       const decoded: any = await this.jwtService.verifyAsync(token);
       const usuarioId = decoded.sub;
-      
+
       return this.prisma.reconocimiento.findMany({
         where: { usuarioId },
         orderBy: {
@@ -67,6 +75,8 @@ export class ReconocimientoController {
 
   // Listar reconocimientos por usuario (por ID)
   @Get('usuario/:usuarioId')
+  @ApiOperation({ summary: 'Listar reconocimientos por usuario' })
+  @ApiResponse({ status: 200, description: 'Lista de reconocimientos del usuario especificado' })
   async findByUsuario(@Param('usuarioId') usuarioId: string) {
     return this.prisma.reconocimiento.findMany({
       where: { usuarioId: Number(usuarioId) },

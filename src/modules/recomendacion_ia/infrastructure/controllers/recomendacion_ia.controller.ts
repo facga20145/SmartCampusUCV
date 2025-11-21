@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
 import { firstValueFrom } from 'rxjs';
 import type { Request } from 'express';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AI_CONFIG } from '../../../../config/ai.config';
 import { RecomendacionIaCreateUseCase } from '../../application/use-cases/commands/recomendacion_ia-create.use-case';
 import { RecomendacionIaUpdateUseCase } from '../../application/use-cases/commands/recomendacion_ia-update.use-case';
@@ -15,6 +16,7 @@ import { RecomendacionIaUpdateRequestDto } from '../../application/dtos/recomend
 import { RecomendacionIaUpdateResponseDto } from '../../application/dtos/recomendacion_ia-update-response.dto';
 import { InscripcionCreateUseCase } from '../../../inscripcion/application/use-cases/commands/inscripcion-create.use-case';
 
+@ApiTags('Recomendaciones IA')
 @Controller('recomendaciones-ia')
 export class Recomendacion_iaController {
   constructor(
@@ -26,29 +28,42 @@ export class Recomendacion_iaController {
     private readonly prisma: PrismaClient,
     private readonly jwtService: JwtService,
     private readonly inscripcionCreateUseCase: InscripcionCreateUseCase,
-  ) {}
+  ) { }
 
   @Post()
+  @ApiOperation({ summary: 'Crear recomendación IA manual' })
+  @ApiResponse({ status: 201, description: 'Recomendación creada', type: RecomendacionIaCreateResponseDto })
   async create(@Body() dto: RecomendacionIaCreateRequestDto): Promise<RecomendacionIaCreateResponseDto> {
     return this.createRecomendacionIaUseCase.execute(dto);
   }
 
   @Get()
+  @ApiOperation({ summary: 'Listar todas las recomendaciones' })
+  @ApiResponse({ status: 200, description: 'Lista de recomendaciones', type: [RecomendacionIaCreateResponseDto] })
   async findAll(): Promise<RecomendacionIaCreateResponseDto[]> {
     return this.findAllRecomendacionIaUseCase.execute();
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Obtener recomendación por ID' })
+  @ApiResponse({ status: 200, description: 'Recomendación encontrada', type: RecomendacionIaCreateResponseDto })
+  @ApiResponse({ status: 404, description: 'Recomendación no encontrada' })
   async findById(@Param('id', ParseIntPipe) id: number): Promise<RecomendacionIaCreateResponseDto> {
     return this.findOneRecomendacionIaUseCase.execute(id);
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Actualizar recomendación' })
+  @ApiResponse({ status: 200, description: 'Recomendación actualizada', type: RecomendacionIaUpdateResponseDto })
   async update(@Param('id', ParseIntPipe) id: number, @Body() dto: RecomendacionIaUpdateRequestDto): Promise<RecomendacionIaUpdateResponseDto> {
     return this.updateRecomendacionIaUseCase.execute({ id, ...dto });
   }
 
   @Post('personalizadas')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Generar recomendación personalizada con IA' })
+  @ApiResponse({ status: 200, description: 'Recomendación generada exitosamente' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
   async recomendarPersonalizada(@Req() req: Request, @Body() body?: { user_query?: string }) {
     // Extraer usuarioId del token JWT
     const auth = req.headers.authorization || '';
@@ -56,7 +71,7 @@ export class Recomendacion_iaController {
     if (!token) {
       throw new UnauthorizedException('Token requerido');
     }
-    
+
     let usuarioId: number;
     try {
       const decoded: any = await this.jwtService.verifyAsync(token);
@@ -73,7 +88,7 @@ export class Recomendacion_iaController {
         }
       }
     });
-    
+
     // 2. Obtener preferencias del usuario
     const preferencias = await this.prisma.preferenciaUsuario.findMany({
       where: { usuarioId }
@@ -155,6 +170,10 @@ export class Recomendacion_iaController {
 
   // Endpoint para inscripción automática cuando el usuario acepta una recomendación
   @Post('inscribir/:actividadId')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Inscribirse desde una recomendación' })
+  @ApiResponse({ status: 200, description: 'Inscripción realizada exitosamente' })
+  @ApiResponse({ status: 400, description: 'Ya inscrito o error en inscripción' })
   async inscribirDesdeRecomendacion(
     @Param('actividadId', ParseIntPipe) actividadId: number,
     @Req() req: Request
@@ -165,7 +184,7 @@ export class Recomendacion_iaController {
     if (!token) {
       throw new UnauthorizedException('Token requerido');
     }
-    
+
     let usuarioId: number;
     try {
       const decoded: any = await this.jwtService.verifyAsync(token);
