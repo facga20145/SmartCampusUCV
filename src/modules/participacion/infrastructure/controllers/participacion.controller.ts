@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Patch, Post, Query, Req, UnauthorizedException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiQuery } from '@nestjs/swagger';
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
 import { ParticipacionCreateUseCase } from '../../application/use-cases/commands/participacion-create.use-case';
@@ -10,6 +10,7 @@ import { ParticipacionCreateRequestDto } from '../../application/dtos/participac
 import { ParticipacionUpdateRequestDto } from '../../application/dtos/participacion-update-request.dto';
 import { ParticipacionRankingActividadUseCase } from '../../application/use-cases/queries/participacion-ranking-actividad.use-case';
 import { ParticipacionRankingGlobalUseCase } from '../../application/use-cases/queries/participacion-ranking-global.use-case';
+import { ApiDoc } from '../../../../common/decorators/api-doc.decorator';
 
 @ApiTags('Participaciones')
 @Controller('participaciones')
@@ -26,9 +27,11 @@ export class ParticipacionController {
 
   // Asignar/crear participación (puntos iniciales)
   @Post()
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Registrar participación' })
-  @ApiResponse({ status: 201, description: 'Participación registrada' })
+  @ApiDoc({
+    summary: 'Registrar participación',
+    auth: true,
+    ok: { status: 201, description: 'Participación registrada' },
+  })
   async create(@Body() dto: ParticipacionCreateRequestDto, @Req() req: Request) {
     // Extraer usuarioId del token JWT
     const auth = req.headers.authorization || '';
@@ -52,9 +55,11 @@ export class ParticipacionController {
 
   // Obtener mis participaciones (del usuario autenticado)
   @Get()
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Obtener mis participaciones' })
-  @ApiResponse({ status: 200, description: 'Lista de participaciones' })
+  @ApiDoc({
+    summary: 'Obtener mis participaciones',
+    auth: true,
+    ok: { status: 200, description: 'Lista de participaciones' },
+  })
   async getMyParticipaciones(@Req() req: Request) {
     // Extraer usuarioId del token JWT
     const auth = req.headers.authorization || '';
@@ -75,27 +80,33 @@ export class ParticipacionController {
 
   // Actualizar asistencia/feedback/puntos
   @Patch(':id')
-  @ApiOperation({ summary: 'Actualizar participación (feedback/puntos)' })
-  @ApiResponse({ status: 200, description: 'Participación actualizada' })
+  @ApiDoc({
+    summary: 'Actualizar participación (feedback/puntos)',
+    ok: { status: 200, description: 'Participación actualizada' },
+  })
   update(@Param('id') id: string, @Body() dto: ParticipacionUpdateRequestDto) {
     return this.updateUseCase.execute({ ...dto, id: Number(id) });
   }
 
   // Ranking por actividad
   @Get('ranking')
-  @ApiOperation({ summary: 'Ranking por actividad' })
   @ApiQuery({ name: 'actividadId', required: true })
   @ApiQuery({ name: 'limit', required: false })
-  @ApiResponse({ status: 200, description: 'Ranking de la actividad' })
+  @ApiDoc({
+    summary: 'Ranking por actividad',
+    ok: { status: 200, description: 'Ranking de la actividad' },
+  })
   ranking(@Query('actividadId') actividadId: string, @Query('limit') limit?: string) {
     return this.rankingActividadUc.execute(Number(actividadId), limit ? Number(limit) : undefined);
   }
 
   // Ranking global
   @Get('ranking-global')
-  @ApiOperation({ summary: 'Ranking global' })
   @ApiQuery({ name: 'limit', required: false })
-  @ApiResponse({ status: 200, description: 'Ranking global' })
+  @ApiDoc({
+    summary: 'Ranking global',
+    ok: { status: 200, description: 'Ranking global' },
+  })
   rankingGlobal(@Query('limit') limit?: string) {
     return this.rankingGlobalUc.execute(limit ? Number(limit) : undefined);
   }

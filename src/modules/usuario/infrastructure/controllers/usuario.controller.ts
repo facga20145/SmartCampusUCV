@@ -9,7 +9,8 @@ import { UsuarioCreateRequestDto } from '../../application/dtos/usuario-create-r
 import { UsuarioCreateResponseDto } from '../../application/dtos/usuario-create-response.dto';
 import { UsuarioUpdateRequestDto } from '../../application/dtos/usuario-update-request.dto';
 import { UsuarioUpdateResponseDto } from '../../application/dtos/usuario-update-response.dto';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
+import { ApiDoc } from '../../../../common/decorators/api-doc.decorator';
 
 @ApiTags('Usuarios')
 @Controller('usuarios')
@@ -24,45 +25,57 @@ export class UsuarioController {
   ) { }
 
   @Post()
-  @ApiOperation({ summary: 'Registrar un nuevo usuario' })
-  @ApiResponse({ status: 201, description: 'Usuario creado exitosamente', type: UsuarioCreateResponseDto })
+  @ApiDoc({
+    summary: 'Registrar un nuevo usuario',
+    ok: { status: 201, description: 'Usuario creado exitosamente', type: UsuarioCreateResponseDto },
+  })
   async create(@Body() dto: UsuarioCreateRequestDto): Promise<UsuarioCreateResponseDto> {
     return this.createUsuarioUseCase.execute(dto);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar todos los usuarios' })
-  @ApiResponse({ status: 200, description: 'Lista de usuarios', type: [UsuarioCreateResponseDto] })
+  @ApiDoc({
+    summary: 'Listar todos los usuarios',
+    ok: { status: 200, description: 'Lista de usuarios', type: [UsuarioCreateResponseDto] },
+  })
   async findAll(): Promise<UsuarioCreateResponseDto[]> {
     return this.findAllUsuariosUseCase.execute();
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtener usuario por ID' })
-  @ApiResponse({ status: 200, description: 'Usuario encontrado', type: UsuarioCreateResponseDto })
-  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
+  @ApiDoc({
+    summary: 'Obtener usuario por ID',
+    ok: { status: 200, description: 'Usuario encontrado', type: UsuarioCreateResponseDto },
+    notFound: true,
+  })
   async findById(@Param('id', ParseIntPipe) id: number): Promise<UsuarioCreateResponseDto> {
     return this.findUsuarioByIdUseCase.execute(id);
   }
 
   @Get('email/:email')
-  @ApiOperation({ summary: 'Obtener usuario por email' })
-  @ApiResponse({ status: 200, description: 'Usuario encontrado', type: UsuarioCreateResponseDto })
-  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
+  @ApiDoc({
+    summary: 'Obtener usuario por email',
+    ok: { status: 200, description: 'Usuario encontrado', type: UsuarioCreateResponseDto },
+    notFound: true,
+  })
   async findByEmail(@Param('email') email: string): Promise<UsuarioCreateResponseDto> {
     return this.findUsuarioByEmailUseCase.execute(email);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Actualizar usuario' })
-  @ApiResponse({ status: 200, description: 'Usuario actualizado', type: UsuarioUpdateResponseDto })
+  @ApiDoc({
+    summary: 'Actualizar usuario',
+    ok: { status: 200, description: 'Usuario actualizado', type: UsuarioUpdateResponseDto },
+  })
   async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UsuarioUpdateRequestDto): Promise<UsuarioUpdateResponseDto> {
     return this.updateUsuarioUseCase.execute({ id, ...dto } as any);
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Eliminar usuario' })
-  @ApiResponse({ status: 200, description: 'Usuario eliminado' })
+  @ApiDoc({
+    summary: 'Eliminar usuario',
+    ok: { status: 200, description: 'Usuario eliminado' },
+  })
   async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
     await this.deleteUsuarioUseCase.execute(id);
   }

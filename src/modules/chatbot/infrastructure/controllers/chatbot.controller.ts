@@ -2,7 +2,8 @@ import { Body, Controller, Post } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
+import { ApiDoc } from '../../../../common/decorators/api-doc.decorator';
 import { AI_CONFIG } from '../../../../config/ai.config';
 
 @ApiTags('Chatbot')
@@ -14,8 +15,10 @@ export class ChatbotController {
   ) { }
 
   @Post('mensaje')
-  @ApiOperation({ summary: 'Procesar mensaje del chatbot' })
-  @ApiResponse({ status: 201, description: 'Mensaje procesado exitosamente' })
+  @ApiDoc({
+    summary: 'Procesar mensaje del chatbot',
+    ok: { status: 201, description: 'Mensaje procesado exitosamente' },
+  })
   async procesarMensaje(@Body() body: { usuarioId: number; mensaje: string }) {
     const { usuarioId, mensaje } = body;
 
