@@ -75,20 +75,7 @@ export class Recomendacion_iaController {
     ok: { status: 200, description: 'Recomendación generada exitosamente' },
   })
   async recomendarPersonalizada(@Req() req: Request, @Body() body?: { user_query?: string }) {
-    // Extraer usuarioId del token JWT
-    const auth = req.headers.authorization || '';
-    const token = auth.startsWith('Bearer ') ? auth.slice(7) : undefined;
-    if (!token) {
-      throw new UnauthorizedException('Token requerido');
-    }
-
-    let usuarioId: number;
-    try {
-      const decoded: any = await this.jwtService.verifyAsync(token);
-      usuarioId = decoded.sub;
-    } catch (error) {
-      throw new UnauthorizedException('Token inválido');
-    }
+    const usuarioId = await this.getUserIdFromToken(req);
 
     // 1. Obtener actividades disponibles
     const actividades = await this.prisma.actividad.findMany({
@@ -190,20 +177,7 @@ export class Recomendacion_iaController {
     @Param('actividadId', ParseIntPipe) actividadId: number,
     @Req() req: Request
   ) {
-    // Extraer usuarioId del token JWT
-    const auth = req.headers.authorization || '';
-    const token = auth.startsWith('Bearer ') ? auth.slice(7) : undefined;
-    if (!token) {
-      throw new UnauthorizedException('Token requerido');
-    }
-
-    let usuarioId: number;
-    try {
-      const decoded: any = await this.jwtService.verifyAsync(token);
-      usuarioId = decoded.sub;
-    } catch (error) {
-      throw new UnauthorizedException('Token inválido');
-    }
+    const usuarioId = await this.getUserIdFromToken(req);
 
     // Verificar que la actividad existe
     const actividad = await this.prisma.actividad.findUnique({
@@ -265,6 +239,21 @@ export class Recomendacion_iaController {
       };
     } catch (error: any) {
       throw new Error(`Error al realizar la inscripción: ${error.message}`);
+    }
+  }
+
+  private async getUserIdFromToken(req: Request): Promise<number> {
+    const auth = req.headers.authorization || '';
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : undefined;
+    if (!token) {
+      throw new UnauthorizedException('Token requerido');
+    }
+
+    try {
+      const decoded: any = await this.jwtService.verifyAsync(token);
+      return decoded.sub;
+    } catch (error) {
+      throw new UnauthorizedException('Token inválido');
     }
   }
 }
