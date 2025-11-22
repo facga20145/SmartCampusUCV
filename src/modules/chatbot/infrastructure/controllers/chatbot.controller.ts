@@ -32,21 +32,29 @@ export class ChatbotController {
     });
 
     let respuestaBot = '';
+    let recomendaciones: any[] = [];
 
     // Procesar el mensaje con detección mejorada
     const mensajeLower = mensaje.toLowerCase();
 
-    if (mensajeLower.includes('recomend') || mensajeLower.includes('actividad') || mensajeLower.includes('suger')) {
+    // Comando explícito de inscripción (oculto al usuario normal, enviado por botón)
+    if (mensaje.startsWith('CMD_INSCRIBIR_ID:')) {
+      const idStr = mensaje.split(':')[1].trim();
+      respuestaBot = await this.procesarInscripcionPorId(usuarioId, parseInt(idStr));
+    }
+    else if (mensajeLower.includes('recomend') || mensajeLower.includes('actividad') || mensajeLower.includes('suger')) {
       // El usuario está pidiendo recomendaciones
-      respuestaBot = await this.procesarRecomendacion(usuarioId, mensaje);
+      const resultado = await this.procesarRecomendacion(usuarioId, mensaje);
+      respuestaBot = resultado.texto;
+      recomendaciones = resultado.recomendaciones;
     } else if (
       mensajeLower.includes('inscrib') ||
       mensajeLower.includes('quiero ir') ||
       mensajeLower.includes('me anoto') ||
       mensajeLower.includes('apuntar')
     ) {
-      // El usuario quiere inscribirse automáticamente
-      respuestaBot = await this.procesarInscripcion(usuarioId, mensaje);
+      // El usuario quiere inscribirse por texto (método antiguo/natural)
+      respuestaBot = await this.procesarInscripcionTexto(usuarioId, mensaje);
     } else if (mensajeLower.includes('hola') || mensajeLower.includes('salud') || mensajeLower.includes('buenos') || mensajeLower.includes('buenas')) {
       respuestaBot = '¡Hola! Soy el asistente de SmartCampus. Puedo ayudarte a:\n- Obtener recomendaciones personalizadas de actividades\n- Inscribirte en actividades\n\n¿Qué te gustaría hacer?';
     } else {
@@ -63,11 +71,12 @@ export class ChatbotController {
       id: interaccion.id,
       mensajeUsuario: mensaje,
       respuestaBot,
+      recomendaciones, // Devolver recomendaciones estructuradas
       fecha: interaccion.fecha
     };
   }
 
-  private async procesarRecomendacion(usuarioId: number, userQuery?: string): Promise<string> {
+  private async procesarRecomendacion(usuarioId: number, userQuery?: string): Promise<{ texto: string, recomendaciones: any[] }> {
     try {
       // Verificar si el usuario tiene preferencias
       const preferencias = await this.prisma.preferenciaUsuario.findMany({
@@ -105,7 +114,7 @@ export class ChatbotController {
         puntos: p.puntos
       }));
 
-      // Preparar datos para la IA (nuevo formato)
+      // Preparar datos para la IA
       const actividadesParaIA = actividades.map(act => ({
         id: act.id,
         categoria: act.categoria,
@@ -132,33 +141,83 @@ export class ChatbotController {
         })
       );
 
-      // Formatear respuesta mejorada
       const recomendaciones = response.data.recomendaciones || [];
+
       if (recomendaciones.length === 0) {
-        return 'No encontré actividades que coincidan con tus preferencias. ¿Te gustaría explorar otros tipos de actividades?';
+        return {
+          texto: 'No encontré actividades que coincidan con tus preferencias. ¿Te gustaría explorar otros tipos de actividades?',
+          recomendaciones: []
+        };
       }
 
-      let respuesta = '🎯 Basándome en tus preferencias, te recomiendo estas actividades:\n\n';
-      recomendaciones.forEach((rec: any, index: number) => {
-        respuesta += `${index + 1}. **${rec.titulo}** (${rec.categoria})\n`;
-        if (rec.razon) {
-          respuesta += `   💡 ${rec.razon}\n`;
-        }
-        if (rec.puntuacion) {
-          respuesta += `   ⭐ Puntuación: ${rec.puntuacion.toFixed(2)}\n`;
-        }
-        respuesta += `   📝 Para inscribirte, di: "quiero inscribirme en la actividad ${index + 1}" o "inscríbeme en ${rec.titulo}"\n\n`;
+      // Enriquecer recomendaciones con datos reales de la BD para asegurar consistencia
+      const recomendacionesEnriquecidas = recomendaciones.map((rec: any) => {
+        const actividadReal = actividades.find(a => a.id === rec.actividad_id);
+        return {
+          ...rec,
+          ...actividadReal // Sobrescribir con datos frescos de la BD
+        };
       });
 
-      return respuesta;
+      let respuesta = '🎯 Basándome en tus preferencias, te recomiendo estas actividades:';
+
+      return {
+        texto: respuesta,
+        recomendaciones: recomendacionesEnriquecidas
+      };
 
     } catch (error: any) {
       console.error('Error procesando recomendación:', error);
-      return 'Lo siento, hubo un problema al generar las recomendaciones. Por favor, inténtalo de nuevo.';
+      return {
+        texto: 'Lo siento, hubo un problema al generar las recomendaciones. Por favor, inténtalo de nuevo.',
+        recomendaciones: []
+      };
     }
   }
 
-  private async procesarInscripcion(usuarioId: number, mensaje: string): Promise<string> {
+  private async procesarInscripcionPorId(usuarioId: number, actividadId: number): Promise<string> {
+    try {
+      const actividad = await this.prisma.actividad.findUnique({
+        where: { id: actividadId }
+      });
+
+      if (!actividad) {
+        return 'Lo siento, no pude encontrar esa actividad. Puede que haya sido cancelada.';
+      }
+
+      // Verificar si ya está inscrito
+      const inscripcionExistente = await this.prisma.inscripcion.findFirst({
+        where: {
+          usuarioId,
+          actividadId: actividadId,
+          estado: {
+            in: ['pendiente', 'confirmada']
+          }
+        }
+      });
+
+      if (inscripcionExistente) {
+        return `✅ Ya estás inscrito en la actividad "${actividad.titulo}". Tu estado es: ${inscripcionExistente.estado}.`;
+      }
+
+      // Realizar la inscripción
+      await this.prisma.inscripcion.create({
+        data: {
+          usuarioId,
+          actividadId: actividad.id,
+          estado: 'pendiente'
+        }
+      });
+
+      return `✅ ¡Inscripción exitosa! Te has anotado en "${actividad.titulo}".\n\n📅 Fecha: ${actividad.fecha?.toLocaleDateString('es-ES')}\n📍 Lugar: ${actividad.lugar || 'Por confirmar'}`;
+
+    } catch (error) {
+      console.error('Error inscripción por ID:', error);
+      return 'Hubo un error al procesar tu inscripción. Inténtalo de nuevo.';
+    }
+  }
+
+  private async procesarInscripcionTexto(usuarioId: number, mensaje: string): Promise<string> {
     try {
       // Intentar extraer el ID de actividad o nombre de la actividad del mensaje
       const actividadesRecientes = await this.prisma.actividad.findMany({
@@ -177,6 +236,8 @@ export class ChatbotController {
       let actividadSeleccionada: any = null;
 
       // Intentar encontrar por número (ej: "actividad 1", "primera actividad")
+      // NOTA: Esto sigue siendo riesgoso si el usuario ve una lista diferente, 
+      // pero se mantiene como fallback para chat de texto libre.
       const numeroMatch = mensaje.match(/(?:actividad\s*)?(\d+)/);
       if (numeroMatch) {
         const num = parseInt(numeroMatch[1]) - 1;
@@ -204,31 +265,7 @@ export class ChatbotController {
         return 'No encontré actividades disponibles para inscribirte. Primero pídeme recomendaciones con "recomiéndame actividades".';
       }
 
-      // Verificar si ya está inscrito
-      const inscripcionExistente = await this.prisma.inscripcion.findFirst({
-        where: {
-          usuarioId,
-          actividadId: actividadSeleccionada.id,
-          estado: {
-            in: ['pendiente', 'confirmada']
-          }
-        }
-      });
-
-      if (inscripcionExistente) {
-        return `✅ Ya estás inscrito en la actividad "${actividadSeleccionada.titulo}". Tu estado es: ${inscripcionExistente.estado}.`;
-      }
-
-      // Realizar la inscripción
-      const inscripcion = await this.prisma.inscripcion.create({
-        data: {
-          usuarioId,
-          actividadId: actividadSeleccionada.id,
-          estado: 'pendiente'
-        }
-      });
-
-      return `✅ ¡Perfecto! Te he inscrito en la actividad "${actividadSeleccionada.titulo}". Tu inscripción está pendiente de confirmación.\n\n📅 Fecha: ${actividadSeleccionada.fecha?.toLocaleDateString('es-ES')}\n📍 Lugar: ${actividadSeleccionada.lugar || 'Por confirmar'}`;
+      return await this.procesarInscripcionPorId(usuarioId, actividadSeleccionada.id);
 
     } catch (error: any) {
       console.error('Error procesando inscripción:', error);
