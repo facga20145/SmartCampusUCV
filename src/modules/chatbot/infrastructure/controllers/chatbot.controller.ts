@@ -78,6 +78,16 @@ export class ChatbotController {
 
   private async procesarRecomendacion(usuarioId: number, userQuery?: string): Promise<{ texto: string, recomendaciones: any[] }> {
     try {
+      // Obtener datos del usuario incluyendo hobbies e intereses
+      const usuario = await this.prisma.usuario.findUnique({
+        where: { id: usuarioId },
+        select: {
+          id: true,
+          hobbies: true,
+          intereses: true
+        }
+      });
+
       // Verificar si el usuario tiene preferencias
       const preferencias = await this.prisma.preferenciaUsuario.findMany({
         where: { usuarioId }
@@ -130,13 +140,15 @@ export class ChatbotController {
         nivel_interes: 1
       }));
 
-      // Llamar al microservicio de IA
+      // Llamar al microservicio de IA con hobbies e intereses
       const response = await firstValueFrom(
         this.httpService.post(`${AI_CONFIG.SERVICE_URL}/recomendar`, {
           usuario_id: usuarioId,
           actividades: actividadesParaIA,
           preferencias: preferenciasParaIA,
           historial_participacion: historialParticipacion,
+          hobbies: usuario?.hobbies || null,
+          intereses: usuario?.intereses || null,
           user_query: userQuery || null
         })
       );
@@ -185,7 +197,7 @@ export class ChatbotController {
         return 'Lo siento, no pude encontrar esa actividad. Puede que haya sido cancelada.';
       }
 
-      // Verificar si ya está inscrito
+      // Verificar si ya está inscrito en ESTA actividad
       const inscripcionExistente = await this.prisma.inscripcion.findFirst({
         where: {
           usuarioId,
@@ -198,6 +210,35 @@ export class ChatbotController {
 
       if (inscripcionExistente) {
         return `✅ Ya estás inscrito en la actividad "${actividad.titulo}". Tu estado es: ${inscripcionExistente.estado}.`;
+      }
+
+      // Verificar si tiene una inscripción activa en OTRA actividad que aún no ha terminado
+      const inscripcionActiva = await this.prisma.inscripcion.findFirst({
+        where: {
+          usuarioId,
+          estado: {
+            in: ['pendiente', 'confirmada']
+          },
+          actividad: {
+            fecha: {
+              gte: new Date() // Solo actividades futuras o de hoy
+            }
+          }
+        },
+        include: {
+          actividad: {
+            select: {
+              id: true,
+              titulo: true,
+              fecha: true
+            }
+          }
+        }
+      });
+
+      if (inscripcionActiva) {
+        const fechaActividad = inscripcionActiva.actividad.fecha?.toLocaleDateString('es-ES') || 'Por confirmar';
+        return `⚠️ Ya tienes una inscripción activa en "${inscripcionActiva.actividad.titulo}" (${fechaActividad}).\n\nDebes completar o cancelar esa actividad antes de inscribirte en otra.\n\n💡 Puedes pedir "cancelar inscripción" si deseas liberar tu cupo.`;
       }
 
       // Realizar la inscripción
